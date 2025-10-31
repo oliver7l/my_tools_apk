@@ -12,7 +12,7 @@
 
 ## 应用截图
 
-![alt text](image.png)
+![随机照片应用截图](image.png)
 
 ## 安装说明
 
