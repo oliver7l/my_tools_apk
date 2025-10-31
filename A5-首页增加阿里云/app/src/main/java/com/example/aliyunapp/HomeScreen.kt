@@ -14,13 +14,19 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
@@ -35,34 +41,24 @@ data class FeatureItem(
 @Composable
 fun HomeScreen(
     onNavigateToRandomPhoto: () -> Unit,
-    onNavigateToFlomoNotes: () -> Unit,
-    onNavigateToFlomoNotesList: () -> Unit,
-    onNavigateToFavorites: () -> Unit,
     onNavigateToSpeechToText: () -> Unit,
     onNavigateToTranslation: () -> Unit,
-    onNavigateToAliyunTest: () -> Unit
+    onNavigateToAliyunTest: () -> Unit,
+    onNavigateToAliyunMCPTest: () -> Unit,
+    onNavigateToFavorites: () -> Unit,
+    onNavigateToRandomNote: () -> Unit,
+    onNavigateToBilibiliFavorites: () -> Unit,
+    onNavigateToBilibiliLiked: () -> Unit,
+    onNavigateToDatabaseStats: () -> Unit
 ) {
     val context = LocalContext.current
-    val favoritesRepository = remember { FavoritesRepository(context) }
-    val coroutineScope = rememberCoroutineScope()
     
-    // 获取收藏的笔记数量
-    var favoriteCount by remember { mutableStateOf(0) }
+    // 收藏数量（由于删除了flomo功能，暂时设为0）
+    val favoriteCount = 0
     
-    // 在组件加载时获取收藏数量
-    LaunchedEffect(Unit) {
-        favoriteCount = favoritesRepository.getFavorites().size
-    }
-    
-    // 功能列表
+    // 功能列表 - 重新组织，将哔哩哔哩收藏放在更显眼的位置
     val features = remember {
         listOf(
-            FeatureItem(
-                title = "我的收藏",
-                description = "已收藏 $favoriteCount 条笔记",
-                icon = Icons.Default.Favorite,
-                action = onNavigateToFavorites
-            ),
             FeatureItem(
                 title = "随机照片",
                 description = "随机浏览您的照片集",
@@ -70,24 +66,22 @@ fun HomeScreen(
                 action = onNavigateToRandomPhoto
             ),
             FeatureItem(
-                title = "Flomo笔记",
-                description = "浏览和管理您的flomo笔记",
-                icon = Icons.Default.Note,
-                action = onNavigateToFlomoNotes
+                title = "哔哩哔哩收藏",
+                description = "浏览收藏的视频内容",
+                icon = Icons.Default.PlayArrow,
+                action = onNavigateToBilibiliFavorites
             ),
             FeatureItem(
-                title = "笔记列表",
-                description = "查看所有flomo笔记",
-                icon = Icons.Default.Photo,
-                action = onNavigateToFlomoNotesList
+                title = "哔哩哔哩喜欢",
+                description = "浏览喜欢的视频内容",
+                icon = Icons.Default.Favorite,
+                action = onNavigateToBilibiliLiked
             ),
             FeatureItem(
-                title = "照片管理",
-                description = "管理和整理您的照片",
-                icon = Icons.Default.PhotoLibrary,
-                action = {
-                    Toast.makeText(context, "功能开发中...", Toast.LENGTH_SHORT).show()
-                }
+                title = "随机笔记",
+                description = "随机阅读您的笔记",
+                icon = Icons.Default.Article,
+                action = onNavigateToRandomNote
             ),
             FeatureItem(
                 title = "语音转文字",
@@ -102,10 +96,36 @@ fun HomeScreen(
                 action = onNavigateToTranslation
             ),
             FeatureItem(
+                title = "收藏笔记",
+                description = "查看收藏的笔记列表",
+                icon = Icons.Default.Favorite,
+                action = onNavigateToFavorites
+            ),
+            FeatureItem(
+                title = "数据统计",
+                description = "查看数据库统计信息",
+                icon = Icons.Default.DataUsage,
+                action = onNavigateToDatabaseStats
+            ),
+            FeatureItem(
                 title = "阿里云测试",
                 description = "测试阿里云百炼API",
                 icon = Icons.Default.Cloud,
                 action = onNavigateToAliyunTest
+            ),
+            FeatureItem(
+                title = "阿里云MCP测试",
+                description = "测试阿里云MCP功能",
+                icon = Icons.Default.Cloud,
+                action = onNavigateToAliyunMCPTest
+            ),
+            FeatureItem(
+                title = "照片管理",
+                description = "管理和整理您的照片",
+                icon = Icons.Default.PhotoLibrary,
+                action = {
+                    Toast.makeText(context, "功能开发中...", Toast.LENGTH_SHORT).show()
+                }
             )
         )
     }
@@ -125,105 +145,83 @@ fun HomeScreen(
             modifier = Modifier.padding(vertical = 24.dp)
         )
         
-        // 功能列表 - 水平排列
-        Row(
+        // 功能列表 - 网格布局（每行5个）
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 8.dp)
         ) {
-            features.forEach { feature ->
-                SmallFeatureCard(feature = feature)
+            features.chunked(5).forEach { rowFeatures ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    rowFeatures.forEach { feature ->
+                        SmallFeatureCard(feature = feature)
+                    }
+                    // 如果一行不满5个，添加空位保持对齐
+                    if (rowFeatures.size < 5) {
+                        repeat(5 - rowFeatures.size) {
+                            Spacer(modifier = Modifier.width(120.dp))
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-@Composable
-fun FavoritesSection(
-    favoriteCount: Int,
-    onNavigateToFavorites: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        onClick = onNavigateToFavorites
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 图标
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "我的收藏",
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            
-            // 文本内容
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "我的收藏",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "已收藏 $favoriteCount 条笔记",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
+
 
 @Composable
 fun SmallFeatureCard(
     feature: FeatureItem,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Card(
         modifier = modifier
-            .width(80.dp)
-            .height(100.dp)
+            .width(120.dp)
+            .height(90.dp)
             .padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        onClick = feature.action
     ) {
-        // 图标按钮
-        IconButton(
-            onClick = feature.action,
-            modifier = Modifier.size(60.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(6.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = feature.icon,
                 contentDescription = feature.title,
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
+            Spacer(modifier = Modifier.height(3.dp))
+            Text(
+                text = feature.title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(1.dp))
+            Text(
+                text = feature.description,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
         }
-        
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        // 标题文本
-        Text(
-            text = feature.title,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            maxLines = 1,
-            color = MaterialTheme.colorScheme.onSurface
-        )
     }
 }
 
